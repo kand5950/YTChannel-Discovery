@@ -30,6 +30,8 @@ function App() {
       document.getElementById("signInDiv"),
       { theme: "outline", size: "large" }
     );
+
+    google.accounts.id.prompt();
   }, []);
   // If we have no user show sign in button and vise versa.
   return <div className="App">
