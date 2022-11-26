@@ -11,6 +11,12 @@ function App() {
     let userObject = jwt_decode(response.credential);
     console.log(userObject);
     setUser(userObject);
+    document.getElementById("signInDiv").hidden = true;
+  }
+
+  function handleSignout(event) {
+    setUser({})
+    document.getElementById("signInDiv").hidden = false;
   }
 
   useEffect(() => {
@@ -28,12 +34,19 @@ function App() {
   // If we have no user show sign in button and vise versa.
   return <div className="App">
     <div id="signInDiv"></div>
+    
     { user &&
       <div>
         <img src={user.picture}></img>
         <h3>{user.name}</h3>
       </div>
     }
+
+    {Object.keys(user).length != 0 &&
+      <button onClick={ (e) => handleSignout(e) }>Sign Out</button>
+    }
+
+    
   </div>;
 }
 
