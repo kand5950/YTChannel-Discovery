@@ -9,6 +9,7 @@ const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
 
 export default function Login(props) {
   const [user, setUser] = useState({});
+  const [tokenClient, setTokenClient] = useState({});
 
   function handleCallbackResponse(response) {
     console.log('Encoded JWT ID token: ' + response.credential);
@@ -23,6 +24,9 @@ export default function Login(props) {
     document.getElementById('signInDiv').hidden = false;
   }
 
+  function createDriveFile() {
+    tokenClient.requestAccessToken();
+  }
   useEffect(() => {
     /* global google */
     const google = window.google;
@@ -36,10 +40,18 @@ export default function Login(props) {
       size: 'large',
     });
 
-    google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-    });
+    // tokenClient
+    setTokenClient(
+      google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (tokenResponse) => {
+          console.log(tokenResponse);
+        },
+      })
+    );
+
+    // tokenClient.requestAccessToken();
 
     google.accounts.id.prompt();
   }, []);
@@ -52,6 +64,7 @@ export default function Login(props) {
         <div>
           <img src={user.picture}></img>
           <h3>{user.name}</h3>
+          <input type="submit" onClick={createDriveFile} value="Sub list" />
         </div>
       )}
 
