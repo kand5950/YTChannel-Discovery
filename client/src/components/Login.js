@@ -1,11 +1,14 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import jwt_decode from 'jwt-decode';
+import axios from 'axios';
 
 const CLIENT_ID =
   '730391860568-5bqmr300dku394cucpfeeemcp6en9jp6.apps.googleusercontent.com';
 
 const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
+
+const API_KEY = 'AIzaSyBBji4bbd0CFN2rA65wqMFbicgZ0H1jbSI';
 
 export default function Login(props) {
   const [user, setUser] = useState({});
@@ -47,6 +50,20 @@ export default function Login(props) {
         scope: SCOPES,
         callback: (tokenResponse) => {
           console.log(tokenResponse);
+
+          if (tokenResponse && tokenResponse.access_token) {
+            axios
+              .get(
+                `https://youtube.googleapis.com/youtube/v3/subscriptions?part=snippet%2CcontentDetails&mine=true&key=${API_KEY} HTTP/1.1`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${tokenResponse.access_token}`,
+                    'Accept': 'application/json',
+                  },
+                }
+              )
+              .then((response) => console.log(response.data.items));
+          }
         },
       })
     );
