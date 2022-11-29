@@ -9,6 +9,7 @@ const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
 
 export default function Login(props) {
   const [auth, setAuth] = useState(null);
+  const [subs, setSubs] = useState(null);
 
   const handleCallbackResponse = (response) => {
     setAuth(response.access_token);
@@ -33,7 +34,7 @@ export default function Login(props) {
         `https://youtube.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=200&access_token=${auth}`
       )
       .then((data) => {
-        console.log(data.data.items);
+        setSubs(data.data);
       })
       .catch((error) => {
         console.log(error);
@@ -45,6 +46,17 @@ export default function Login(props) {
       hello
       <button onClick={doAuth}>AUTH</button>
       <button onClick={getSubscriptions}>SUBS</button>
+      <ul>
+        {subs &&
+          subs.items.map((item) => {
+            return (
+              <li>
+                <h2>{item.snippet.title}</h2>
+                <p>{item.snippet.description}</p>
+              </li>
+            );
+          })}
+      </ul>
     </div>
   );
 }
