@@ -1,91 +1,89 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
-import jwt_decode from 'jwt-decode';
+import { useState } from 'react';
+
 import axios from 'axios';
 
 const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
-const API_KEY = process.env.REACT_APP_YTAPI_KEY;
 
 const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
 
 export default function Login(props) {
-  const [user, setUser] = useState({});
-  const [tokenClient, setTokenClient] = useState({});
+  const [auth, setAuth] = useState(null);
+  const [subs, setSubs] = useState(null);
+  const [subsChannels, setSubsChannels] = useState(null);
 
-  function handleCallbackResponse(response) {
-    console.log('Encoded JWT ID token: ' + response.credential);
-    let userObject = jwt_decode(response.credential);
-    console.log(userObject);
-    setUser(userObject);
-    document.getElementById('signInDiv').hidden = true;
-  }
+  const handleCallbackResponse = (response) => {
+    setAuth(response.access_token);
+  };
 
-  function handleSignout(event) {
-    setUser({});
-    document.getElementById('signInDiv').hidden = false;
-  }
-
-  function createDriveFile() {
-    tokenClient.requestAccessToken();
-  }
-  useEffect(() => {
-    /* global google */
-    const google = window.google;
-    google.accounts.id.initialize({
-      client_id: CLIENT_ID,
-      callback: handleCallbackResponse,
-    });
-
-    google.accounts.id.renderButton(document.getElementById('signInDiv'), {
-      theme: 'outline',
-      size: 'large',
-    });
-
-    // tokenClient
-    setTokenClient(
-      google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (tokenResponse) => {
-          console.log(tokenResponse);
-
-          if (tokenResponse && tokenResponse.access_token) {
-            axios
-              .get(
-                `https://youtube.googleapis.com/youtube/v3/subscriptions?part=snippet%2CcontentDetails&mine=true&key=${API_KEY} HTTP/1.1`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${tokenResponse.access_token}`,
-                    'Accept': 'application/json',
-                  },
-                }
-              )
-              .then((response) => console.log(response.data.items));
-          }
-        },
+  const google = window.google;
+  let client = google.accounts.oauth2.initTokenClient({
+    scope: SCOPES,
+    client_id: CLIENT_ID,
+    ux_mode: 'popup',
+    callback: handleCallbackResponse,
+  });
+  const doAuth = () => {
+    const getCode = () => {
+      client.requestAccessToken();
+    };
+    getCode();
+  };
+  const getSubscriptions = () => {
+    axios
+      .get(
+        `https://youtube.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=200&access_token=${auth}`
+      )
+      .then((data) => {
+        setSubs(data.data);
       })
-    );
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
-    // tokenClient.requestAccessToken();
+  const getRecommendedChannels = (item) => {
+    const subsResourceID = item.snippet.resourceId.channelId;
+    axios
+      .get(
+        `https://youtube.googleapis.com/youtube/v3/channelSections?part=snippet%2CcontentDetails&channelId=${subsResourceID}&maxResults=200&access_token=${auth}`
+      )
+      .then((data) => {
+        let hasRecommendedChannels = false;
+        data.data.items.forEach((element) => {
+          if (element.snippet.type === 'multiplechannels') {
+            setSubsChannels((prev) => element.contentDetails.channels);
+            hasRecommendedChannels = true;
+          }
+        });
+        console.log(subsChannels);
+      });
+  };
 
-    google.accounts.id.prompt();
-  }, []);
+  const clickHandler = (item) => {
+    getRecommendedChannels(item);
+  };
 
   return (
-    <ul>
-      <div id="signInDiv"></div>
-
-      {user && (
-        <div>
-          <img src={user.picture}></img>
-          <h3>{user.name}</h3>
-          <input type="submit" onClick={createDriveFile} value="Sub list" />
-        </div>
-      )}
-
-      {Object.keys(user).length != 0 && (
-        <button onClick={(e) => handleSignout(e)}>Sign Out</button>
-      )}
-    </ul>
+    <div className="App">
+      hello
+      <button onClick={doAuth}>AUTH</button>
+      <button onClick={getSubscriptions}>SUBS</button>
+      <ul>
+        {subs &&
+          subs.items.map((item) => {
+            return (
+              <>
+                <li>
+                  <h2>{item.snippet.title}</h2>
+                  <img src={item.snippet.thumbnails.default.url}></img>
+                  <p>{item.snippet.description}</p>
+                </li>
+                <button onClick={() => clickHandler(item)}>Recommended!</button>
+              </>
+            );
+          })}
+      </ul>
+    </div>
   );
 }
