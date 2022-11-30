@@ -10,6 +10,7 @@ const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
 export default function Login(props) {
   const [auth, setAuth] = useState(null);
   const [subs, setSubs] = useState(null);
+  const [subsChannels, setSubsChannels] = useState(null);
 
   const handleCallbackResponse = (response) => {
     setAuth(response.access_token);
@@ -41,6 +42,28 @@ export default function Login(props) {
       });
   };
 
+  const getRecommendedChannels = (item) => {
+    const subsResourceID = item.snippet.resourceId.channelId;
+    axios
+      .get(
+        `https://youtube.googleapis.com/youtube/v3/channelSections?part=snippet%2CcontentDetails&channelId=${subsResourceID}&maxResults=200&access_token=${auth}`
+      )
+      .then((data) => {
+        let hasRecommendedChannels = false;
+        data.data.items.forEach((element) => {
+          if (element.snippet.type === 'multiplechannels') {
+            setSubsChannels((prev) => element.contentDetails.channels);
+            hasRecommendedChannels = true;
+          }
+        });
+        console.log(subsChannels);
+      });
+  };
+
+  const clickHandler = (item) => {
+    getRecommendedChannels(item);
+  };
+
   return (
     <div className="App">
       hello
@@ -50,10 +73,14 @@ export default function Login(props) {
         {subs &&
           subs.items.map((item) => {
             return (
-              <li>
-                <h2>{item.snippet.title}</h2>
-                <p>{item.snippet.description}</p>
-              </li>
+              <>
+                <li>
+                  <h2>{item.snippet.title}</h2>
+                  <img src={item.snippet.thumbnails.default.url}></img>
+                  <p>{item.snippet.description}</p>
+                </li>
+                <button onClick={() => clickHandler(item)}>Recommended!</button>
+              </>
             );
           })}
       </ul>
