@@ -29,6 +29,7 @@ export default function Login(props) {
     };
     getCode();
   };
+
   const getSubscriptions = () => {
     axios
       .get(
@@ -49,14 +50,11 @@ export default function Login(props) {
         `https://youtube.googleapis.com/youtube/v3/channelSections?part=snippet%2CcontentDetails&channelId=${subsResourceID}&maxResults=200&access_token=${auth}`
       )
       .then((data) => {
-        let hasRecommendedChannels = false;
         data.data.items.forEach((element) => {
           if (element.snippet.type === 'multiplechannels') {
-            setSubsChannels((prev) => element.contentDetails.channels);
-            hasRecommendedChannels = true;
+            setSubsChannels(element.contentDetails.channels);
           }
         });
-        console.log(subsChannels);
       });
   };
 
@@ -76,7 +74,7 @@ export default function Login(props) {
               <>
                 <li>
                   <h2>{item.snippet.title}</h2>
-                  <img src={item.snippet.thumbnails.default.url}></img>
+                  <img src={item.snippet.thumbnails.default.url} alt=""></img>
                   <p>{item.snippet.description}</p>
                 </li>
                 <button onClick={() => clickHandler(item)}>Recommended!</button>
